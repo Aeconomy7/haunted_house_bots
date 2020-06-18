@@ -6,8 +6,8 @@ import json
 import discord
 from discord.ext import commands
 
-BOT_PREFIX=("!dndroll ","/dndroll ")
-TOKEN = 'XXX'
+BOT_PREFIX=("!dndbot ","/dndbot ")
+TOKEN = 'XXXX'
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 
@@ -22,12 +22,12 @@ bot = commands.Bot(command_prefix=BOT_PREFIX)
 #~~~~~~~~~~~~~~#
 @bot.command(name	= 'hello',
 	description	= "Introduce yourself to the bot and learn a lil something",
-	brief		= "Hi there, `dndroll`! :)",
+	brief		= "Hi there, `dndbot`! :)",
 	pass_context	= True)
 #@bot.command(name='hello',pass_context=True)
 async def hello_cmd(context):
 	# print('Function called by ' + context.message.author)
-	msg = 'Hello ' + context.message.author.mention + ', welcome to `dndroll`, type in the command `!dndroll help` to learn more!'
+	msg = 'Hello ' + context.message.author.mention + ', I am `dndbot`!  Type in the command `!dndbot help` to learn more!'
 	# await bot.send_message(message.channel, msg)
 	await bot.say(msg)
 #~~~~~~~~~~~~#
@@ -44,10 +44,10 @@ bot.remove_command("help")
 @bot.command(name 	= 'help',
 	pass_context	= True)
 async def help_cmd(context):
-	msg	= ("```Usage: `!dndroll [cmd]` OR `/dndroll [cmd]`\n\n"
+	msg	= ("```Usage: `!dndbot [cmd]` OR `/dndbot [cmd]`\n\n"
 	"Available commands (`[cmd]`):\n"
-	"\t`hello` : Say hello to `dndroll`!\n"
-	"\t`roll`  : Roll a dice regularly (Ex: `!dndroll roll d20+2`)```")
+	"\t`hello` : Say hello to `dndbot`!\n"
+	"\t`roll`  : Roll a dice regularly (Ex: `!dndbot roll d20+2`)```")
 	await bot.say(msg)
 #~~~~~~~~~~~#
 # End /help #
@@ -62,7 +62,8 @@ async def help_cmd(context):
 	brief		= "Rolls dice d1-d199999",
 	pass_context	= True)
 async def roll_cmd(context,*dice_args):
-	print(dice_args)
+	dice_roll = [' '.join(tups) for tups in dice_args]
+	print(dice_roll)
 	# dice_cmd	= format(len(dice_args).join(dice_args))
 	# YOU ARE HERE
 	# await bot.say(dice_cmd)
