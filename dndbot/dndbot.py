@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 BOT_PREFIX=("!dndroll ","/dndroll ")
-TOKEN = 'NzIzMDA5NTE1MDI0NDE2Nzk0.Xut3Uw.yV6DUHfmIk12O20K0fzTGyOmAyc'
+TOKEN = 'XXX'
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 
@@ -62,9 +62,10 @@ async def help_cmd(context):
 	brief		= "Rolls dice d1-d199999",
 	pass_context	= True)
 async def roll_cmd(context,*dice_args):
-	dice_cmd	= format(len(dice_args).join(dice_args))
+	print(dice_args)
+	# dice_cmd	= format(len(dice_args).join(dice_args))
 	# YOU ARE HERE
-	await bot.say(dice_cmd)
+	# await bot.say(dice_cmd)
 #~~~~~~~~~~~#
 # End /roll #
 #~~~~~~~~~~~#
