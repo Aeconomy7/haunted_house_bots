@@ -3,7 +3,7 @@ import random
 import discord
 
 BOT_PREFIX=("@dndroll","!dndroll","/dndroll")
-TOKEN = 'NzIzMDA5NTE1MDI0NDE2Nzk0.XurbSg.u-F29WhncOs9I-jTH4SYkJxVv0A'
+TOKEN = 'XXXX'
 
 client = discord.Client()
 
