@@ -1,1 +1,3 @@
 dndbot
+hackerbot
+PerionBot

@@ -1,21 +1,31 @@
 # Work with Python 3.6
 import random
+import re
+import dice
+
 import asyncio
 import aiohttp
 import json
+
 import discord
 from discord.ext import commands
 
-BOT_PREFIX=("!dndbot ","/dndbot ")
-TOKEN = 'XXXX'
+BOT_PREFIX=("!dndbot ","/dndbot ","/")
+TOKEN='NzIzMDA5NTE1MDI0NDE2Nzk0.XuuqNA.Xa6HP-9QgYYT6535UqkfuIr7wRY'
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 
-#@bot.event
-#async def on_message(message):
-	# we do not want the bot to reply to itself
-#	if message.author == bot.user:
-#		return
+@bot.event
+async def on_message(message):
+	if message.author == bot.user:
+		return
+	if '/' in message.content:
+		allowed_slash_cmds = ['roll','r']
+		if message.content.split('/')[1] in allowed_slash_cmds or len(message.content.split()) > 1:
+			await bot.process_commands(message)
+	else:
+		await bot.process_commands(message)
+	return
 
 #~~~~~~~~~~~~~~#
 # Begin /hello #
@@ -29,7 +39,7 @@ async def hello_cmd(context):
 	# print('Function called by ' + context.message.author)
 	msg = 'Hello ' + context.message.author.mention + ', I am `dndbot`!  Type in the command `!dndbot help` to learn more!'
 	# await bot.send_message(message.channel, msg)
-	await bot.say(msg)
+	await context.send(msg)
 #~~~~~~~~~~~~#
 # Emd /hello #
 #~~~~~~~~~~~~#
@@ -48,7 +58,7 @@ async def help_cmd(context):
 	"Available commands (`[cmd]`):\n"
 	"\t`hello` : Say hello to `dndbot`!\n"
 	"\t`roll`  : Roll a dice regularly (Ex: `!dndbot roll d20+2`)```")
-	await bot.say(msg)
+	await context.send(msg)
 #~~~~~~~~~~~#
 # End /help #
 #~~~~~~~~~~~#
@@ -57,16 +67,26 @@ async def help_cmd(context):
 #~~~~~~~~~~~~~#
 # Begin /roll #
 #~~~~~~~~~~~~~#
+# Supporting commands
+def dice_roll(sides):
+	return randint(1,sides)
+
 @bot.command(name	= 'roll',
-	description	= "Roll a dice, any number of sides 1-199999!",
+	description	= "Roll a dice, any number of sides and any modifier!!",
 	brief		= "Rolls dice d1-d199999",
+	aliases		= ['r'],
 	pass_context	= True)
 async def roll_cmd(context,*dice_args):
-	dice_roll = [' '.join(tups) for tups in dice_args]
-	print(dice_roll)
-	# dice_cmd	= format(len(dice_args).join(dice_args))
-	# YOU ARE HERE
-	# await bot.say(dice_cmd)
+	# get arguements passed
+	dice_roll = ''.join(dice_args)
+
+	# attempt to roll the dice!
+	try:
+		r = dice.roll(dice_roll)
+		await context.send("You rolled a `" + str(r) + "`!")
+	except dice.DiceBaseException as e:
+		print(e.pretty_print())
+		await context.send("Error with your `roll` command '" + dice_roll + "' :(")
 #~~~~~~~~~~~#
 # End /roll #
 #~~~~~~~~~~~#
@@ -91,5 +111,5 @@ async def on_ready():
 
 #bot.loop.create_task(list_servers())
 
-print("Running bot")
+print("[+] Bot started")
 bot.run(TOKEN)
