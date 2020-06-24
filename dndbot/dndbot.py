@@ -11,7 +11,7 @@ import discord
 from discord.ext import commands
 
 BOT_PREFIX=("!dndbot ","/dndbot ","/")
-TOKEN='NzIzMDA5NTE1MDI0NDE2Nzk0.XvINYw.wY-j6h60Ve45mZaxzUl5zvpHG0Y'
+TOKEN='XXXX'
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 

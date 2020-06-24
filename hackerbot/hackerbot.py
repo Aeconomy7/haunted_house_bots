@@ -11,7 +11,7 @@ import discord
 from discord.ext import commands
 
 BOT_PREFIX=("!hack ","/hack ","/")
-TOKEN='NzIzMjc3NjM0NTY5NjMzODUz.XvINVg.OAupjJA3r6fsJqBEhM_gM46K3xk'
+TOKEN='XXXX'
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 
