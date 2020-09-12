@@ -81,7 +81,17 @@ async def vote_cmd(context,*movie_args):
 	# get arguements passed
 	movie_name = ' '.join(movie_args)
 
+	# Check if this is already user's vote
+	with open("movie_votes.txt","r") as f:
+		for line in f:
+			if line.split("///")[0] == str(context.message.author):
+				if line.split("///")[1].strip("\n").replace("_"," ").lower() == movie_name.strip("\n").lower():
+					await context.send("**" + line.split("///")[1].strip("\n").replace("_"," ") + "** is currently your vote!")
+					return
+
+
 	changed_vote = ""
+	chng = False
 
 	if movie_name is '':
 		await context.send("Please supply a movie name :)")
@@ -124,6 +134,7 @@ async def vote_cmd(context,*movie_args):
 		movie = fs[1].strip("\n")
 		if user == str(context.message.author):
 			changed_vote = movie.replace("_"," ")
+			chng = True
 			print("[!] " + str(context.message.author) + " changing vote: '" + changed_vote + "' -> '" + movie_name + "'")
 		else:
 			vote_rewrite.write(line)
@@ -132,10 +143,10 @@ async def vote_cmd(context,*movie_args):
 	# Add movie vote and discord name to file
 	with open("movie_votes.txt","a") as f:
 		f.write(str(context.message.author) + "///" + movie_name.replace(" ","_") + "\n")
-		if not (changed_vote == movie_name):
-			await context.send("Successfully changed your vote from **" + changed_vote + "** to **" + movie_name + "**")
-		else:
+		if chng is False:
 			await context.send("Successfully cast your movie vote for **" + movie_name + "**!")
+		else:
+			await context.send("Successfully changed your vote from **" + changed_vote + "** to **" + movie_name + "**")
 		print("[+] Successfully cast new movie vote: " + str(context.message.author) + ":" + movie_name.replace(" ","_"))
 
 	return
@@ -165,19 +176,70 @@ async def status_cmd(context):
 #~~~~~~~~~~~~~#
 
 
+#~~~~~~~~~~~~~~~~~#
+# Begin /synopsis #
+#~~~~~~~~~~~~~~~~~#
+@bot.command(name	= 'overview',
+	description	= "Get a brief synopsis of a movie.",
+	brief		= "Get a synopsis",
+	aliases		= ['synopsis','plot'],
+	pass_context	= True)
+async def synopsis_cmd(context,*movie_args):
+	msg = ""
+
+	movie_name = ' '.join(movie_args)
+
+	URL = 'http://www.omdbapi.com'
+	PARAMS = {
+		"apikey":OMDB_API_KEY,
+		"t":movie_name
+	}
+
+	r = requests.get(url=URL,params=PARAMS)
+
+	if r.content == b'{"Response":"False","Error":"Movie not found!"}':
+		await context.send("[-] No movie found named `" + movie_name + "` :(")
+		return
+
+	r_json = r.json()
+
+	if movie_name.lower() != str(r_json["Title"]).lower():
+		await context.send("[-] No movie found named `" + movie_name + "` :(")
+		return
+
+	movie_title	= str(r_json["Title"])
+	movie_year	= str(r_json["Year"])
+	movie_plot 	= str(r_json["Plot"])
+	movie_directors	= str(r_json["Director"])
+	movie_writers	= str(r_json["Writer"])
+	movie_actors	= str(r_json["Actors"])
+
+	msg = msg + "```" + movie_title + " (" + movie_year + ")\n\n"
+	msg = msg + "Directed by:  " + movie_directors + "\n"
+	msg = msg + "Written by:   " + movie_writers + "\n"
+	msg = msg + "Starring:     " + movie_actors + "\n\n"
+	msg = msg + "Synopsis:\n" + movie_plot + "```"
+
+	print("[+] Fetched overview for '" + movie_title + "'")
+
+	await context.send(msg)
+#~~~~~~~~~~~~~~~#
+# End /synopsis #
+#~~~~~~~~~~~~~~~#
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Begin task: movie select #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # NOTE: Make sure to enter channel / role ID in proper fields below
 #@bot.event
-@aiocron.crontab('0 7 * * sun')
-#@aiocron.crontab('*/2 * * * *')
+@aiocron.crontab('20 10 * * fri')
+#@aiocron.crontab('* * * * *')
 async def select_movie():
-#	channel_id = 751847219518242935 # Enter channel ID here (will be the channel where movies are announced)
-	channel_id = 752590414699167814 # Test channel
-#	role_id    = 751833828729028729 # Enter role ID here (will be mentioned when movie is picked)
-	role_id    = 723296898852716667 # Test role
+	channel_id = 751847219518242935 # Enter channel ID here (will be the channel where movies are announced)
+#	channel_id = 752590414699167814 # Test channel
+	role_id    = 751833828729028729 # Enter role ID here (will be mentioned when movie is picked)
+#	role_id    = 723296898852716667 # Test role
 
 	mins_to_movie = 1 # Number of minutes between random movie selection and movie time
 
