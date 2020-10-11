@@ -20,7 +20,7 @@ from discord.ext import commands
 from discord.utils import get
 
 BOT_PREFIX=("!moviebot ","/moviebot ","!movie ","/movie ")
-TOKEN='NzUxNTk4NTUxMTk2MzY4OTA3.X1Lasg.UvUdnkS6u4c3o__l6zHhJ4hVyhM'
+TOKEN='XXXX'
 OMDB_API_KEY='565e94d0'
 
 
