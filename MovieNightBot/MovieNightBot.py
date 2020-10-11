@@ -20,8 +20,18 @@ from discord.ext import commands
 from discord.utils import get
 
 BOT_PREFIX=("!moviebot ","/moviebot ","!movie ","/movie ")
-TOKEN='XXXX'
+TOKEN='NzUxNTk4NTUxMTk2MzY4OTA3.X1Lasg.UvUdnkS6u4c3o__l6zHhJ4hVyhM'
 OMDB_API_KEY='565e94d0'
+
+
+### BEGIN MISC FUNCTIONS ###
+
+def aggressive_url_encode(string):
+	return "".join("%{0:0>2}".format(format(ord(char), "x")) for char in string)
+
+### END MISC FUNCTIONS ###
+
+
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 
@@ -49,25 +59,6 @@ async def hello_cmd(context):
 #~~~~~~~~~~~~#
 # Emd /hello #
 #~~~~~~~~~~~~#
-
-
-#~~~~~~~~~~~~#
-# Begin help #
-#~~~~~~~~~~~~#
-# Remove previous help command
-#bot.remove_command("help")
-
-#@bot.command(name 	= 'help',
-#	pass_context	= True)
-#async def help_cmd(context):
-#	msg	= ("```Usage: `!moviebot [cmd]` || `/moviebot [cmd]` || `!movie [cmd]` || `/movie [cmd]`\n\n"
-#	"Available commands (`[cmd]`):\n"
-#	"\t`hello` : Say hello to `MovieNightBotot`!\n```"
-#	await context.send(msg)
-#~~~~~~~~~~~#
-# End /help #
-#~~~~~~~~~~~#
-
 
 #~~~~~~~~~~~~~#
 # Begin /vote #
@@ -233,9 +224,11 @@ async def synopsis_cmd(context,*movie_args):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # NOTE: Make sure to enter channel / role ID in proper fields below
 #@bot.event
-@aiocron.crontab('20 10 * * fri')
 #@aiocron.crontab('* * * * *')
+@aiocron.crontab('0 19 * * fri')
 async def select_movie():
+	# UPDATE: these channel/role ids are specific to the developers discord and should be updated
+	#	  to your own channel which you want movie select on
 	channel_id = 751847219518242935 # Enter channel ID here (will be the channel where movies are announced)
 #	channel_id = 752590414699167814 # Test channel
 	role_id    = 751833828729028729 # Enter role ID here (will be mentioned when movie is picked)
@@ -246,6 +239,7 @@ async def select_movie():
 	vote_no = 0
 	all_votes = []
 
+	# special thanks to Hobro for these cursed react emoji strings
 	react_emojis = [
 		'1\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP}',
 		'2\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP}',
@@ -274,24 +268,24 @@ async def select_movie():
 	print("[?] Total number of votes: " + str(len(all_votes)))
 
 	# Main logic
-	if len(all_votes) == 0:
-		msg = msg + "No movies have been voted for :("
-		await channel.send(msg)
-		return
-	elif len(all_votes) == 1:
-		msg = msg + "<@&" + str(role_id) + ">'s!!!  There is only **1** vote this week!  The chosen movie is: `" + all_votes[0]['movie_name'].replace("_"," ") + "` (vote cast by `" + all_votes[0]['discord_name'] + "`)"
-		await channel.send(msg)
-		return
-	else:
+#	if len(all_votes) == 0:
+#		msg = msg + "No movies have been voted for :("
+#		await channel.send(msg)
+#		return
+#	elif len(all_votes) == 1:
+#		msg = msg + "<@&" + str(role_id) + ">'s!!!  There is only **1** vote this week!  The chosen movie is: `" + all_votes[0]['movie_name'].replace("_"," ") + "` (vote cast by `" + all_votes[0]['discord_name'] + "`)"
+#		await channel.send(msg)
+#		return
+#	else:
 		# Debug
 		#print("range of random.sample: " + str(range(0,len(all_votes))))
-		if len(all_votes) == 2:
-			rand_nums = random.sample(range(0,len(all_votes)),2)
-			msg = msg + "<@&" + str(role_id) + ">'s!!!  " + str(len(all_votes)) + " vote(s) are in and the poll is closed!  The **two** movies being passed to the council are as follows:\n```"
-		else:
+#		if len(all_votes) == 2:
+#			rand_nums = random.sample(range(0,len(all_votes)),2)
+#			msg = msg + "<@&" + str(role_id) + ">'s!!!  " + str(len(all_votes)) + " vote(s) are in and the poll is closed!  The **two** movies being passed to the council are as follows:\n```"
+#		else:
 			# Change last number here to add in more movies to decision pool
-			rand_nums = random.sample(range(0,len(all_votes)),3)
-			msg = msg + "<@&" + str(role_id) + ">'s!!!  " + str(len(all_votes)) + " vote(s) are in and the poll is closed!  The **three** movies being passed to the council are as follows:\n```"
+#			rand_nums = random.sample(range(0,len(all_votes)),3)
+#			msg = msg + "<@&" + str(role_id) + ">'s!!!  " + str(len(all_votes)) + " vote(s) are in and the poll is closed!  The **three** movies being passed to the council are as follows:\n```"
 
 		# Debug
 		#print("rand_nums: " + str(rand_nums))
@@ -304,35 +298,41 @@ async def select_movie():
 		#	return
 
 
-		i = 0
-		for num in rand_nums:
-			i = i + 1
-			msg = msg + str(i) + ") " + all_votes[num]['movie_name'].replace("_"," ") + " (vote cast by " + all_votes[num]['discord_name'] + ")\n"
+### NOTE: One random movie:
+	rand_nums = random.sample(range(0,len(all_votes)),1)
+	msg = msg + "<@&" + str(role_id) + ">'s!!!  " + str(len(all_votes)) + " vote(s) are in and the poll is closed!  The selected movie is **" + all_votes[rand_nums[0]]['movie_name'].replace("_"," ") + "**"
+	await channel.send(msg)
 
-		msg = msg + "```"
+### NOTE: Three random movies:
+#		i = 0
+#		for num in rand_nums:
+#			i = i + 1
+#			msg = msg + str(i) + ") " + all_votes[num]['movie_name'].replace("_"," ") + " (vote cast by " + all_votes[num]['discord_name'] + ")\n"
 
-		msg_react = await channel.send(msg)
-		if len(all_votes) == 2:
-			await msg_react.add_reaction(react_emojis[0])
-			await msg_react.add_reaction(react_emojis[1])
-		else:
-			await msg_react.add_reaction(react_emojis[0])
-			await msg_react.add_reaction(react_emojis[1])
-			await msg_react.add_reaction(react_emojis[2])
+#		msg = msg + "```"
+
+#		msg_react = await channel.send(msg)
+#		if len(all_votes) == 2:
+#			await msg_react.add_reaction(react_emojis[0])
+#			await msg_react.add_reaction(react_emojis[1])
+#		else:
+#			await msg_react.add_reaction(react_emojis[0])
+#			await msg_react.add_reaction(react_emojis[1])
+#			await msg_react.add_reaction(react_emojis[2])
 
 		# Sleep until it is movie time
 		#await asyncio.sleep(1)
 
-		one_votes   = 0
-		two_votes   = 0
-		three_votes = 0
+#		one_votes   = 0
+#		two_votes   = 0
+#		three_votes = 0
 
-		await asyncio.sleep(5)
+#		await asyncio.sleep(5)
 
-		print(msg_react.id)
+#		print(msg_react.id)
 		#for react in msg_react.reactions:
 
-		return
+	return
 
 
 	#await channel.send(msg)
