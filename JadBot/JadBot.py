@@ -27,7 +27,7 @@ JBOT_DB.__enter__()
 #~~~~~~~~~~~~~~#
 
 BOT_PREFIX=("!jadbot ","/jadbot ","/")
-TOKEN='NzU0NzYxMDMzMjU5Njc5Nzc1.X15b_Q.7AGiG2f9X8DdK5bYe39UPLuoPJI'
+TOKEN='XXXX'
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 print("[+] Successfully attached bot!")
