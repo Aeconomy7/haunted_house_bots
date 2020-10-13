@@ -79,6 +79,23 @@ class JadDbHandler:
 			print(e)
 			return None
 
+	def get_rand_character(self):
+		sql_query = "SELECT * FROM characters ORDER BY RANDOM() LIMIT 1;"
+
+		try:
+			cursor = self.__conn.cursor()
+			cursor.execute(sql_query)
+			row = cursor.fetchone()
+			if row is None:
+				print("[-] Error picking random character :(")
+				return None
+			else:
+				print("[+] \'" + row[1] + "\' was randomly selected!")
+				return row
+		except Error as e:
+			print(e)
+			return None
+
 	def create_character(self,char_name):
 		sql_query = "INSERT INTO characters ( discord_name ) VALUES ( \'" + char_name + "\' )"
 
