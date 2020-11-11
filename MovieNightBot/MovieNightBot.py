@@ -72,6 +72,13 @@ async def vote_cmd(context,*movie_args):
 	# get arguements passed
 	movie_name = ' '.join(movie_args)
 
+	# Check if this movie has already beeen watched
+	with open("watched.txt","r") as f:
+		for line in f:
+			if line.strip("\n").replace("_"," ").lower() == movie_name.strip("\n").lower():
+				await context.send("**" + line.strip("\n").replace("_"," ") + "** has already been watched! :D")
+				return
+
 	# Check if this is already user's vote
 	with open("movie_votes.txt","r") as f:
 		for line in f:
@@ -225,14 +232,32 @@ async def synopsis_cmd(context,*movie_args):
 # NOTE: Make sure to enter channel / role ID in proper fields below
 #@bot.event
 #@aiocron.crontab('* * * * *')
-@aiocron.crontab('0 19 * * fri')
+@aiocron.crontab('0 18 * * fri')
 async def select_movie():
 	# UPDATE: these channel/role ids are specific to the developers discord and should be updated
 	#	  to your own channel which you want movie select on
-	channel_id = 751847219518242935 # Enter channel ID here (will be the channel where movies are announced)
+	channel_id = [751847219518242935,758054279092109354] # Enter channel ID here (will be the channel where movies are announced)
 #	channel_id = 752590414699167814 # Test channel
-	role_id    = 751833828729028729 # Enter role ID here (will be mentioned when movie is picked)
+	role_id    = [751833828729028729,775541628668608532] # Enter role ID here (will be mentioned when movie is picked)
 #	role_id    = 723296898852716667 # Test role
+
+	# Announce one hour until movie selection
+	role_mention = 0
+
+        # Get channel
+	for chnl in channel_id:
+		channel = bot.get_channel(chnl)
+		#channel = bot.get_channel(channel_id)
+		msg = msg + "Only **ONE HOUR** remains until a movie is chosen <@&" + str(role_id[role_mention]) + ">'s!!!  Make sure to get your vote in using `/movie vote [MOVIE_NAME]`!"
+		await channel.send(msg)
+		role_mention = role_mention + 1
+		msg = ""
+
+
+	# Sleep one hour
+	print("[.] Sleeping 1 hour before choosing movie...")
+	await asyncio.sleep(3600)
+	print("[!] Time to choose the movie!")
 
 	mins_to_movie = 1 # Number of minutes between random movie selection and movie time
 
@@ -248,8 +273,6 @@ async def select_movie():
 
 	msg = ""
 
-	# Get channel
-	channel = bot.get_channel(channel_id)
 
 	with open("movie_votes.txt","r") as f:
 		for line in f:
@@ -298,10 +321,33 @@ async def select_movie():
 		#	return
 
 
-### NOTE: One random movie:
+	### NOTE: One random movie:
 	rand_nums = random.sample(range(0,len(all_votes)),1)
-	msg = msg + "<@&" + str(role_id) + ">'s!!!  " + str(len(all_votes)) + " vote(s) are in and the poll is closed!  The selected movie is **" + all_votes[rand_nums[0]]['movie_name'].replace("_"," ") + "**"
-	await channel.send(msg)
+	with open("watched.txt","a") as f:
+		f.write(all_votes[rand_nums[0]]['movie_name'] + "\n")
+	# Clear all votes for the movie
+	curr_votes = open("movie_votes.txt","r")
+	lines = curr_votes.readlines()
+	curr_votes.close()
+
+	updated_votes = open("movie_votes.txt","w")
+	for line in lines:
+		if not all_votes[rand_nums[0]]['movie_name'] in line:
+			updated_votes.write(line)
+	updated_votes.close()
+
+	# role mention solution
+	role_mention = 0
+
+	# Get channel
+	for chnl in channel_id:
+		print("[!] Sending results to channel id '" + str(chnl) + "'")
+		channel = bot.get_channel(chnl)
+		#channel = bot.get_channel(channel_id)
+		msg = msg + "<@&" + str(role_id[role_mention]) + ">'s!!!  " + str(len(all_votes)) + " vote(s) are in and the poll is closed!  The selected movie is **" + all_votes[rand_nums[0]]['movie_name'].replace("_"," ") + "**.  *NOTE: The selected movie is final.  Overrule implementation coming soon:tm:*"
+		await channel.send(msg)
+		role_mention = role_mention + 1
+		msg = ""
 
 ### NOTE: Three random movies:
 #		i = 0
