@@ -3,7 +3,7 @@ import sys
 import string
 import time
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 import urllib.parse
 import requests
@@ -28,6 +28,15 @@ OMDB_API_KEY='565e94d0'
 
 def aggressive_url_encode(string):
 	return "".join("%{0:0>2}".format(format(ord(char), "x")) for char in string)
+
+
+def get_no_movie_by_status(status="BACKLOG"):
+	count = 0
+	with open("watched.txt","r") as f:
+		for line in f:
+			if line.split(":")[2].strip("\n") == status:
+				count = count + 1
+	return count
 
 ### END MISC FUNCTIONS ###
 
@@ -72,11 +81,15 @@ async def vote_cmd(context,*movie_args):
 	# get arguements passed
 	movie_name = ' '.join(movie_args)
 
+	if ":" in movie_name:
+		await context.send("Movies with colons in them are bad and therefor not accepted by Movie Bot.  Sorry boutcha bad luck.")
+		return
+
 	# Check if this movie has already beeen watched
 	with open("watched.txt","r") as f:
 		for line in f:
-			if line.strip("\n").replace("_"," ").lower() == movie_name.strip("\n").lower():
-				await context.send("**" + line.strip("\n").replace("_"," ") + "** has already been watched! :D")
+			if line.split(":")[1].strip("\n").replace("_"," ").lower() == movie_name.strip("\n").lower():
+				await context.send("**" + line.split(":")[1].strip("\n").replace("_"," ") + "** has already been watched! :D")
 				return
 
 	# Check if this is already user's vote
@@ -225,6 +238,85 @@ async def synopsis_cmd(context,*movie_args):
 # End /synopsis #
 #~~~~~~~~~~~~~~~#
 
+#~~~~~~~~~~~~~~~~#
+# Begin /history #
+#~~~~~~~~~~~~~~~~#
+#Helper function
+def status_switcher(arguement):
+	switcher = {
+		"watched":0,
+		"backlog":1,
+		"":2,
+	}
+
+	return switcher.get(arguement,3)
+
+@bot.command(name	= 'history',
+	description	= "Get history of chosen/watched movies.",
+	brief		= "Get history",
+	aliases		= ['hist'],
+	pass_context	= True)
+async def history_cmd(context,*stat_args):
+	msg = ""
+	max_char = 0
+	stat_print = 4
+
+	if len(stat_args) == 0:
+		stat_print = 2
+
+	if len(stat_args) > 1:
+		msg = msg + "```Command Usage: /movie history [STATUS (optional)]\n"
+		msg = msg + "                              STATUS: watched / backlog```"
+		await context.send(msg)
+		return
+
+	if stat_print == 4:
+		stat_print = status_switcher(stat_args[0].lower())
+
+	#debug
+	#print("stat_args:  " + str(stat_args))
+	#print("stat_print: " + str(stat_print))
+
+	if stat_print > 2:
+		msg = msg + "```Command Usage: /movie history [STATUS (optional)]\n"
+		msg = msg + "                              STATUS: watched / backlog```"
+		await context.send(msg)
+		return
+
+	# For formatting, get max movie name char
+	with open("watched.txt","r") as f:
+		for line in f:
+			m_name = line.split(":")[1]
+			if len(m_name) > max_char:
+				max_char = len(m_name)
+				#debug
+				#print("max_char: " + str(max_char))
+
+	# Form message
+	msg = msg + "```Date     | Movie name" + (max_char-10)*' ' + " | Status  \n"
+	msg = msg + "---------+-----------" + (max_char-10)*'-' + "-+----------\n"
+	with open("watched.txt","r") as f:
+		for line in f:
+			m_date = line.split(":")[0]
+			m_name = line.split(":")[1]
+			m_stat = line.split(":")[2]
+			if stat_print == 0:
+				if m_stat.replace("\n","").lower() == "watched":
+					msg = msg + m_date + " | " + m_name.replace("_"," ") + (max_char - len(m_name) + 1)*' ' + "| " + m_stat
+			elif stat_print == 1:
+				if m_stat.replace("\n","").lower() == "backlog":
+					msg = msg + m_date + " | " + m_name.replace("_"," ") + (max_char - len(m_name) + 1)*' ' + "| " + m_stat
+			elif stat_print == 2:
+				msg = msg + m_date + " | " + m_name.replace("_"," ") + (max_char - len(m_name) + 1)*' ' + "| " + m_stat
+
+	msg = msg + "```"
+
+	await context.send(msg)
+	return
+#~~~~~~~~~~~~~~#
+# End /history #
+#~~~~~~~~~~~~~~#
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Begin task: movie select #
@@ -234,12 +326,15 @@ async def synopsis_cmd(context,*movie_args):
 #@aiocron.crontab('* * * * *')
 @aiocron.crontab('0 18 * * fri')
 async def select_movie():
-	# UPDATE: these channel/role ids are specific to the developers discord and should be updated
-	#	  to your own channel which you want movie select on
+	msg = ""
+
+# UPDATE: these channel/role ids are specific to the developers discord and should be updated
+# 	  to your own channel which you want movie select on
 	channel_id = [751847219518242935,758054279092109354] # Enter channel ID here (will be the channel where movies are announced)
-#	channel_id = 752590414699167814 # Test channel
+#	channel_id = [752590414699167814] # Test channel
 	role_id    = [751833828729028729,775541628668608532] # Enter role ID here (will be mentioned when movie is picked)
-#	role_id    = 723296898852716667 # Test role
+#	role_id    = [723296898852716667] # Test role
+
 
 	# Announce one hour until movie selection
 	role_mention = 0
@@ -248,10 +343,20 @@ async def select_movie():
 	for chnl in channel_id:
 		channel = bot.get_channel(chnl)
 		#channel = bot.get_channel(channel_id)
-		msg = msg + "Only **ONE HOUR** remains until a movie is chosen <@&" + str(role_id[role_mention]) + ">'s!!!  Make sure to get your vote in using `/movie vote [MOVIE_NAME]`!"
+		backlog_count = get_no_movie_by_status("BACKLOG")
+
+		if backlog_count > 10:
+			msg = "<@&" + str(role_id[role_mention]) + ">!!! There are currently " + str(backlog_count) + " movies backlogged, choose one to watch!! (Oldest movie on BACKLOG has priority, and onwards)"
+			await channel.send(msg)
+			return
+
+
+		msg = "Only **ONE HOUR** remains until a movie is chosen <@&" + str(role_id[role_mention]) + ">'s!!!  Make sure to get your vote in using `/movie vote [MOVIE_NAME]`!"
 		await channel.send(msg)
 		role_mention = role_mention + 1
 		msg = ""
+
+
 
 
 	# Sleep one hour
@@ -324,7 +429,7 @@ async def select_movie():
 	### NOTE: One random movie:
 	rand_nums = random.sample(range(0,len(all_votes)),1)
 	with open("watched.txt","a") as f:
-		f.write(all_votes[rand_nums[0]]['movie_name'] + "\n")
+		f.write( str(date.today().strftime("%m/%d/%y")) + ":" + all_votes[rand_nums[0]]['movie_name'] + ":BACKLOG\n")
 	# Clear all votes for the movie
 	curr_votes = open("movie_votes.txt","r")
 	lines = curr_votes.readlines()

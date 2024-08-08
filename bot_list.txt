@@ -2,3 +2,4 @@ dndbot
 hackerbot
 MovieNightBot
 JadBot
+LOLBOT

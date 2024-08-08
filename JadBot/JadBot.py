@@ -322,8 +322,8 @@ async def jad_attack():
 
 	reward_gold	= 1000
 
-#	channel_id 	= 751847219518242935 # Enter channel ID here (will be the channel where movies are announced)
-	channel_id	= 729104553638625310 # Test channel
+	channel_id 	= 754542101219508385 # Enter channel ID here (will be the channel where movies are announced)
+#	channel_id	= 729104553638625310 # Test channel
 #	role_id		= 751833828729028729 # Enter role ID here (will be mentioned when movie is picked)
 #	role_id		= 723296898852716667 # Test role
 
@@ -343,8 +343,11 @@ async def jad_attack():
 		jad_attack = randint(0,1)
 		jad_attack_type = ''
 
+		# FOR DEBUGGING
+		#rand_sleep = 30
+
 		# SLEEP BETWEEN JAD ATTACKS
-		# .5 to 3 hours
+		# .5 to 5 hours
 		rand_sleep = randint(1800,18000)
 		print("[!] Jad has gone to sleep for " + str(rand_sleep) + " seconds")
 		await asyncio.sleep(rand_sleep)
@@ -352,7 +355,7 @@ async def jad_attack():
 		# JAD IS MAD
 		print("[!] JAD IS ABOUT TO ATTACK...")
 		await channel.send("[!] Jad is stirring...BE ON YOUR TOES!!!")
-		rand_sleep = randint(300,600)
+		rand_sleep = randint(40,200)
 		await asyncio.sleep(rand_sleep)
 
 		# Select random character to target
@@ -363,24 +366,22 @@ async def jad_attack():
 
 		if jad_attack == 0:
 			# Range attack
-			jad_attack_type = 'ranged'
-			with open('img/jad/jad_ranged_attack.gif') as f:
+			jad_attack_type = 'range'
+			with open('img/jad/jad_ranged_attack.gif','rb') as f:
 				picture = discord.File(f)
 				msg = "[!] Jad is targeting **" + char_target[1].split("#")[0] + "** with a **" + jad_attack_type + "** attack!!!  Quick, pray **" + jad_attack_type + "**!"
 				#msg = "**Jad** is targeting <@&" + member.id + "> with a **" + jad_attack_type + "** attack!!!  Quick, pray **" + jad_attack_type + "**!"
 				print("[+] " + msg)
-				await channel.send(picture)
-				await channel.send(msg)
+				await channel.send(content=msg,file=picture)
 		elif jad_attack == 1:
 			# Mage attack
 			jad_attack_type = 'mage'
-			with open('img/jad/jad_magic_attack.gif') as f:
+			with open('img/jad/jad_magic_attack.gif','rb') as f:
 				picture = discord.File(f)
 				msg = "[!] Jad is targeting **" + char_target[1].split("#")[0] + "** with a **" + jad_attack_type + "** attack!!!  Quick, pray **" + jad_attack_type + "**!"
 				#msg = "**Jad** is targeting <@&" + member.id + "> with a **" + jad_attack_type + "** attack!!!  Quick, pray **" + jad_attack_type + "**!"
 				print("[+] " + msg)
-				await channel.send(picture)
-				await channel.send(msg)
+				await channel.send(content=msg,file=picture)
 		elif jad_attack == 2:
 			# Melee attack (not yet implemented)
 			jad_attack_type = 'melee'
@@ -406,7 +407,7 @@ async def jad_attack():
 			dmg = randint(1,20) * -1
 			while JBOT_DB.update_character(char_name=char_target[1],hp=dmg) is not True:
 				print("[-] BAD ERROR")
-			msg = msg + "[-] Jad has struck you with a **" + jad_attack_type + "** attack, dealing **" + str(dmg) + "** damage."
+			msg = msg + "[-] Jad has struck **" + char_target[1].split("#")[0] + "** with a **" + jad_attack_type + "** attack, dealing **" + str(dmg) + "** damage."
 			await channel.send(msg)
 
 		# JAD IS SLEEPY
