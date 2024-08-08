@@ -13,7 +13,9 @@ from discord.ext import commands
 BOT_PREFIX=("!hack ","/hack ","/")
 TOKEN='XXXX'
 
-bot = commands.Bot(command_prefix=BOT_PREFIX)
+intents = discord.Intents.all()
+
+bot = commands.Bot(command_prefix=BOT_PREFIX, intents=intents)
 
 @bot.event
 async def on_message(message):

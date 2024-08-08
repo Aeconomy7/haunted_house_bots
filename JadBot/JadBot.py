@@ -29,7 +29,9 @@ JBOT_DB.__enter__()
 BOT_PREFIX=("!jadbot ","/jadbot ","/")
 TOKEN='XXXX'
 
-bot = commands.Bot(command_prefix=BOT_PREFIX)
+intents = discord.Intents.all()
+
+bot = commands.Bot(command_prefix=BOT_PREFIX,intents=intents)
 print("[+] Successfully attached bot!")
 
 #~~~~~~~~~~~~~~~~~~~~~~#
@@ -316,15 +318,13 @@ async def on_ready():
 #~~~~~~~~~~~~~~~~~~#
 # Event JAD-ATTACK #
 #~~~~~~~~~~~~~~~~~~#
-#@bot.event
+@bot.event
 async def jad_attack():
-
-
 	reward_gold	= 1000
 
-	channel_id 	= 754542101219508385 # Enter channel ID here (will be the channel where movies are announced)
+	channel_id 	= 754542101219508385
 #	channel_id	= 729104553638625310 # Test channel
-#	role_id		= 751833828729028729 # Enter role ID here (will be mentioned when movie is picked)
+#	role_id		= 751833828729028729
 #	role_id		= 723296898852716667 # Test role
 
 	# Get channel
@@ -416,8 +416,7 @@ async def jad_attack():
 #~~~~~~~~~~~~~~~~#
 # End JAD-ATTACK #
 #~~~~~~~~~~~~~~~~#
-
 bot.loop.create_task(jad_attack())
-
 print("[+] Bot started")
-bot.run(TOKEN)
+bot.start(TOKEN)
+

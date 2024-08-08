@@ -14,20 +14,24 @@ from discord.ext import commands
 
 from db.loldb import LolDbHandler
 
-from riotwatcher import LolWatcher, ApiError
+from riotwatcher import LolWatcher, RiotWatcher, ApiError
 
 # INITIATE DB
 LOL_DB = LolDbHandler()
 LOL_DB.__enter__()
 # END INITIATE
 
-
 BOT_PREFIX=("!lolbot ","/lolbot ","/lol")
 TOKEN='XXXX'
 PROXY_MODE=0
-lol_watcher = LolWatcher('XXXX')
+RIOT_API_KEY='XXXX'
+lol_watcher = LolWatcher(RIOT_API_KEY)
+riot_watcher = RiotWatcher(RIOT_API_KEY)
 REGION='na1'
-bot = commands.Bot(command_prefix=BOT_PREFIX)
+
+intents = discord.Intents.all()
+
+bot = commands.Bot(command_prefix=BOT_PREFIX, intents=intents)
 
 @bot.event
 async def on_message(message):
@@ -73,22 +77,45 @@ async def hello_cmd(context):
 async def rank_cmd(context,*rank_args):
 	requests.packages.urllib3.disable_warnings()
 
+	region = 'na1'
+	tag = 'NA1'
+
 	summoner_name = ' '.join(rank_args)
+	if('#' in summoner_name):
+		tag = summoner_name.split('#')[1]
+		summoner_name = summoner_name.split('#')[0]
 	summoner_name_enc = urllib.parse.quote(summoner_name)
+
+	print("[?] Looking up summoner: " + summoner_name + "#" + tag)
+
+	# Get Account
+	try:
+		account = riot_watcher.account.by_riot_id('AMERICAS', summoner_name_enc, tag)
+	except ApiError as err:
+		if err.account.status_code == 429:
+			await context.send("Too many requests, not enough cooks...")
+			return
+		elif err.account.status_code == 404:
+			await context.send("Could not find account for summoner `" + summoner_name + "#" + tag + "` :(")
+			return
+
+	print("account: " + str(account))
+	summoner_name = account['gameName']
 
 	# Get Summoner
 	try:
-		summoner = lol_watcher.summoner.by_name(REGION, summoner_name_enc)
+		summoner = lol_watcher.summoner.by_puuid(region, account['puuid'])
 	except ApiError as err:
 		if err.summoner.status_code == 429:
 			await context.send("Too many requests, not enough cooks...")
 			return
 		elif err.summoner.status_code == 404:
-			await context.send("Could not find ranked history for summoner `" + summoner_name + "` :(")
+			await context.send("Could not find summoner info for `" + summoner_name + "#" + tag + "` :(")
 			return
 
+	print("summoner: " + str(summoner))
 
-	# Fetch ranked data
+	# Get ranked data
 	try:
 		response = lol_watcher.league.by_summoner(REGION,summoner['id'])
 	except ApiError as err:
@@ -96,17 +123,16 @@ async def rank_cmd(context,*rank_args):
 			await context.send("Too many requests, not enough cooks...")
 			return
 		elif err.response.status_code == 404:
-			await context.send("Could not find ranked history for summoner `" + summoner_name + "` :(")
+			await context.send("Could not find ranked history for summoner `" + summoner_name + "#" + tag + "` :(")
 			return
 
-
+	print("response: " + str(response))
 
 	# Successful return message
 	msg = ""
 	msg += "```"
 	try:
 		for i in response:
-			summoner_name = i['summonerName']
 			if i['queueType'] == "RANKED_SOLO_5x5":
 				winrate = (i['wins']/(i['wins']+i['losses']))*100
 				msg += "[SOLO/DUO]: " + i['tier'] + " " + i['rank'] + " " + str(i['leaguePoints']) + "LP, " + str(i['wins']) + " W / " + str(i['losses']) + " L (" + str(round(winrate,2)) + "%)\n"

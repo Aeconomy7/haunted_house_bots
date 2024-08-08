@@ -13,7 +13,10 @@ from discord.ext import commands
 BOT_PREFIX=("!dndbot ","/dndbot ","/")
 TOKEN='XXXX'
 
-bot = commands.Bot(command_prefix=BOT_PREFIX)
+# Define the intents your bot needs
+intents = discord.Intents.all()
+
+bot = commands.Bot(command_prefix=BOT_PREFIX, intents=intents)
 
 @bot.event
 async def on_message(message):

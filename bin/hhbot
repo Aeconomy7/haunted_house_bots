@@ -1,0 +1,147 @@
+#!/bin/bash
+
+# A script made to run haunted house discord bots
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Colours ~makeitgood~
+NORMAL=$(echo -e "\033[1;0m")
+RED=$(echo -e "\033[1;31m")
+GREEN=$(echo -e "\033[1;32m")
+BLUE=$(echo -e "\033[1;34m")
+MAGENTA=$(echo -e "\033[1;35m")
+CYAN=$(echo -e "\033[1;36m")
+
+# Relevant bot file / other
+bot_list="$SCRIPT_DIR/../bot_list.txt"
+bot_apps="$SCRIPT_DIR/.."
+bot_names=()
+bot_to_run=""
+
+discord_token_file="$SCRIPT_DIR/../../.discordbot_tokens.txt"
+riot_token_file="$SCRIPT_DIR/../../.riotapi_token.txt"
+riot_token=""
+
+# Get python version
+python=`which python3`
+
+# Check if a bot arguement was passed or not
+if [ $# -eq 1 ]; then
+        if [[ $(cat $bot_list | grep $1) ]]; then
+                echo -n "$GREEN"
+                echo "[+] Identified bot named '$1'!"
+                echo -n "$NORMAL"
+                bot_to_run=$1
+        else
+                echo -n "$RED"
+                echo "[-] No bot found named '$1'..."
+                echo -n "$NORMAL"
+                exit 1
+        fi
+elif [ $# -eq 0 ]; then
+        num=1
+        echo -n "$CYAN"
+        echo "[?] Choose one of the following haunted house bots to run (Enter the bots corresponding number):"
+        echo -n "$NORMAL"
+        while IFS= read -r line; do
+                echo -n "   "
+                echo -n $num
+                echo -n ") "
+                echo $line
+                bot_names+=( $line )
+                num=$((num+1))
+        done < <(cat $bot_list)
+
+        echo -n "$CYAN"
+        echo -n "[?] Which bot would you like to run: "
+        echo -n "$NORMAL"
+        read bot_choice
+
+        if [ $bot_choice -ge $num ]; then
+                echo -n "$RED"
+                echo "[-] Invalid bot choice :("
+                echo -n "$NORMAL"
+                exit 1
+        fi
+
+        bot_to_run=${bot_names[$((bot_choice-1))]}
+fi
+
+echo -n "$GREEN"
+echo "[+] Attempting to run bot '$bot_to_run'..."
+echo -n "$NORMAL"
+
+# Check that the bot is not already running
+if [[ $(ps aux | grep -v grep | grep $bot_to_run | grep python3) ]]; then
+        echo -n "$RED"
+        echo "[-] Bot is already running!!!"
+        echo -n "$NORMAL"
+        exit 1
+fi
+
+# Get bot token to run bot
+bot_token=`sudo cat $discord_token_file | grep $bot_to_run`
+bot_token=${bot_token##$bot_to_run:}
+# If running the LOLBOT, fetch the Riot API key
+if [ "$bot_to_run" == "LOLBOT" ]; then
+	riot_token=`sudo cat $riot_token_file`
+	if [ -z "$riot_token" ]; then
+		echo -n "$RED"
+		echo "[-] No Riot API key found, check the Riot API key file."
+		echo -n "$NORMAL"
+		exit 1
+	fi
+	echo -n "$GREEN"
+	echo "[+] Found Riot API key for '$bot_to_run'!"
+	sed -i "s/RIOT_API_KEY='XXXX'/RIOT_API_KEY='$riot_token'/g" $bot_apps/$bot_to_run/$bot_to_run.py
+	if [[ -z `cat $bot_apps/$bot_to_run/$bot_to_run.py | grep "RIOT_API_KEY='XXXX'"` ]]; then
+		echo -n "$GREEN"
+		echo "[+] Successfully placed Riot API key in '$bot_to_run.py'"
+		echo -n "$NORMAL"
+	else
+		echo -n "$RED"
+		echo "[-] Failed to replace Riot API key in '$bot_to_run.py'"
+		echo -n "$NORMAL"
+		exit 1
+	fi
+fi
+# Check that there is a token
+if [ -z "$bot_token" ]; then
+        echo -n "$RED"
+        echo "[-] No token found for bot '$bot_to_run', make sure to check the token file."
+        echo -n "$NORMAL"
+        exit 1
+fi
+# Move token into bot file so we can run the bot
+# NOTE: This assumes bot_to_run is same as the directory that the bot is stored in
+cd $bot_apps/$bot_to_run
+echo -n "$GREEN"
+echo "[+] Found token for '$bot_to_run'!"
+sed -i "s/TOKEN='XXXX'/TOKEN='$bot_token'/g" $bot_to_run.py
+# NOTE: If bots start to take different shapes then this line will need to be updated
+if [[ -z `cat $bot_apps/$bot_to_run/$bot_to_run.py | grep "TOKEN='XXXX'"` ]]; then
+        echo -n "$GREEN"
+        echo "[+] Successfully placed token in '$bot_to_run.py'"
+        echo -n "$NORMAL"
+else
+        echo -n "$RED"
+        echo "[-] Failed to replace token in '$bot_to_run.py'"
+        echo -n "$NORMAL"
+        exit 1
+fi
+# Finally, run the bot
+echo -n "$CYAN"
+echo "#~~~~~~~~~~~~~~~~~~# BEGIN BOT #~~~~~~~~~~~~~~~~~~#"
+echo -n "$NORMAL"
+$python $bot_to_run.py
+sed -i "s/TOKEN='$bot_token'/TOKEN='XXXX'/g" $bot_to_run.py
+if [ "$bot_to_run" == "LOLBOT" ]; then
+	sed -i "s/RIOT_API_KEY='$riot_token'/RIOT_API_KEY='XXXX'/g" $bot_to_run.py
+fi
+echo "$CYAN"
+echo "#~~~~~~~~~~~~~~~~~~#  END BOT  #~~~~~~~~~~~~~~~~~~#"
+echo "$GREEN"
+echo "[+] Successfully cleaned up token from '$bot_to_run.py'"
+echo "[+] All done, byebye!"
+echo -n "$NORMAL"
+cd -
+exit 0

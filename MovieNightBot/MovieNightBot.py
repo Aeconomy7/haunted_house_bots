@@ -40,9 +40,9 @@ def get_no_movie_by_status(status="BACKLOG"):
 
 ### END MISC FUNCTIONS ###
 
+intents = discord.Intents.all()
 
-
-bot = commands.Bot(command_prefix=BOT_PREFIX)
+bot = commands.Bot(command_prefix=BOT_PREFIX, intents=intents)
 
 @bot.event
 async def on_message(message):
@@ -104,7 +104,7 @@ async def vote_cmd(context,*movie_args):
 	changed_vote = ""
 	chng = False
 
-	if movie_name is '':
+	if movie_name == '':
 		await context.send("Please supply a movie name :)")
 		return
 
