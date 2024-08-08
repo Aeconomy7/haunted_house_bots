@@ -25,7 +25,7 @@ LOL_DB.__enter__()
 BOT_PREFIX=("!lolbot ","/lolbot ","/lol")
 TOKEN='XXXX'
 PROXY_MODE=0
-lol_watcher = LolWatcher('RGAPI-a24735ad-0081-4bd1-97f4-c2142461d95f')
+lol_watcher = LolWatcher('XXXX')
 REGION='na1'
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 
