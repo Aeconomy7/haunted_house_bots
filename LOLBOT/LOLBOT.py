@@ -28,7 +28,18 @@ RIOT_API_KEY='XXXX'
 lol_watcher = LolWatcher(RIOT_API_KEY)
 riot_watcher = RiotWatcher(RIOT_API_KEY)
 REGION='na1'
-
+RANK_COLORS = {
+	"iron": 0x6E6867,
+	"bronze": 0x9C5221,
+	"silver": 0xC0C0C0,
+	"gold": 0xE1B61A,
+	"platinum": 0x1FAF9B,
+	"emerald": 0x2AB97D,
+	"diamond": 0x4F77FF,
+	"master": 0xA045E0,
+	"grandmaster": 0xBD3737,
+	"challenger": 0xF4C873
+}
 intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix=BOT_PREFIX, intents=intents)
@@ -79,6 +90,7 @@ async def rank_cmd(context,*rank_args):
 
 	region = 'na1'
 	tag = 'NA1'
+	rank = ''
 
 	summoner_name = ' '.join(rank_args)
 	if('#' in summoner_name):
@@ -99,7 +111,7 @@ async def rank_cmd(context,*rank_args):
 			await context.send("Could not find account for summoner `" + summoner_name + "#" + tag + "` :(")
 			return
 
-	print("account: " + str(account))
+	#print("account: " + str(account))
 	summoner_name = account['gameName']
 
 	# Get Summoner
@@ -113,7 +125,7 @@ async def rank_cmd(context,*rank_args):
 			await context.send("Could not find summoner info for `" + summoner_name + "#" + tag + "` :(")
 			return
 
-	print("summoner: " + str(summoner))
+	#print("summoner: " + str(summoner))
 
 	# Get ranked data
 	try:
@@ -126,7 +138,7 @@ async def rank_cmd(context,*rank_args):
 			await context.send("Could not find ranked history for summoner `" + summoner_name + "#" + tag + "` :(")
 			return
 
-	print("response: " + str(response))
+	#print("response: " + str(response))
 
 	# Successful return message
 	msg = ""
@@ -136,23 +148,28 @@ async def rank_cmd(context,*rank_args):
 			if i['queueType'] == "RANKED_SOLO_5x5":
 				winrate = (i['wins']/(i['wins']+i['losses']))*100
 				msg += "[SOLO/DUO]: " + i['tier'] + " " + i['rank'] + " " + str(i['leaguePoints']) + "LP, " + str(i['wins']) + " W / " + str(i['losses']) + " L (" + str(round(winrate,2)) + "%)\n"
+				rank = i['tier']
 			if i['queueType'] == "RANKED_FLEX_SR":
 				winrate = (i['wins']/(i['wins']+i['losses']))*100
 				msg += "[FLEXEMSs]: " + i['tier'] + " " + i['rank'] + " " + str(i['leaguePoints']) + "LP, " + str(i['wins']) + " W / " + str(i['losses']) + " L (" + str(round(winrate,2)) + "%)\n"
 	except:
-		await context.send("Could not find ranked history for summoner `" + summoner_name + "` :(")
+		await context.send("Could not find solo/duo ranked history for summoner `" + summoner_name + "` :(")
 		return
 	msg += "```"
 
 	if msg == "``````":
-		await context.send("Could not find ranked history for summoner `" + summoner_name + "` :(")
+		await context.send("Could not find solo/duo ranked history for summoner `" + summoner_name + "` :(")
 		return
 	else:
-		rank_embed = discord.Embed(title=summoner_name + "'s Rank Stats", description=msg, color=random.randrange(1,16777214))
+		with open(f"./static/img/ranked_emblems/{rank.lower()}.png", "rb") as f:
+			rank_file = discord.File(f, filename="rank.png")
+			rank_embed = discord.Embed(title=summoner_name + "'s Rank Stats", color=RANK_COLORS.get(rank.lower(), 0xFFFFFF))
+			rank_embed.set_thumbnail(url="attachment://rank.png")
+			rank_embed.add_field(name="Rank Info", value=msg, inline=False)
+			await context.send(file=rank_file, embed=rank_embed)
 
-	await context.send(embed=rank_embed)
+
 	print("[+] Successfully found ranking of summoner '" + summoner_name + "'")
-	#await context.send (msg)
 
 	return
 #~~~~~~~~~~~#
