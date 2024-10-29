@@ -2,6 +2,9 @@
 
 # A script made to run haunted house discord bots
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+VENV_DIR="$SCRIPT_DIR/../venv"
+log_dir="$SCRIPT_DIR/../logs"  # Define the log directory
+mkdir -p "$log_dir"  # Ensure log directory exists
 
 # Colours ~makeitgood~
 NORMAL=$(echo -e "\033[1;0m")
@@ -21,127 +24,94 @@ discord_token_file="$SCRIPT_DIR/../../.discordbot_tokens.txt"
 riot_token_file="$SCRIPT_DIR/../../.riotapi_token.txt"
 riot_token=""
 
+# Activate python3 venv
+source "$VENV_DIR/bin/activate"
+
 # Get python version
-python=`which python3`
+python=$(which python3)
 
-# Check if a bot arguement was passed or not
+# Check if a bot argument was passed
 if [ $# -eq 1 ]; then
-        if [[ $(cat $bot_list | grep $1) ]]; then
-                echo -n "$GREEN"
-                echo "[+] Identified bot named '$1'!"
-                echo -n "$NORMAL"
-                bot_to_run=$1
-        else
-                echo -n "$RED"
-                echo "[-] No bot found named '$1'..."
-                echo -n "$NORMAL"
-                exit 1
-        fi
+	bot_name=$1
+	if grep -q "^$bot_name$" "$bot_list"; then
+		echo -e "$GREEN[+] Identified bot named '$bot_name'!$NORMAL" | tee -a "$log_dir/haunted_house.log"
+		bot_to_run=$bot_name
+	else
+		echo -e "$RED[-] No bot found named '$bot_name'...$NORMAL" | tee -a "$log_dir/haunted_house.log"
+		exit 1
+	fi
 elif [ $# -eq 0 ]; then
-        num=1
-        echo -n "$CYAN"
-        echo "[?] Choose one of the following haunted house bots to run (Enter the bots corresponding number):"
-        echo -n "$NORMAL"
-        while IFS= read -r line; do
-                echo -n "   "
-                echo -n $num
-                echo -n ") "
-                echo $line
-                bot_names+=( $line )
-                num=$((num+1))
-        done < <(cat $bot_list)
+	num=1
+	echo -e "$CYAN[?] Choose one of the following haunted house bots to run (Enter the bot's corresponding number):$NORMAL"
+	while IFS= read -r line; do
+		echo -e "   $num) $line"
+		bot_names+=( "$line" )
+		num=$((num+1))
+	done < "$bot_list"
 
-        echo -n "$CYAN"
-        echo -n "[?] Which bot would you like to run: "
-        echo -n "$NORMAL"
-        read bot_choice
+	echo -n "$CYAN[?] Which bot would you like to run: $NORMAL"
+	read bot_choice
 
-        if [ $bot_choice -ge $num ]; then
-                echo -n "$RED"
-                echo "[-] Invalid bot choice :("
-                echo -n "$NORMAL"
-                exit 1
-        fi
+	if [ "$bot_choice" -ge "$num" ] || [ "$bot_choice" -le 0 ]; then
+		echo -e "$RED[-] Invalid bot choice :($NORMAL" | tee -a "$log_dir/haunted_house.log"
+		exit 1
+	fi
 
-        bot_to_run=${bot_names[$((bot_choice-1))]}
+	bot_to_run=${bot_names[$((bot_choice-1))]}
+else
+	echo -e "$RED[-] Usage: $0 [bot_name]$NORMAL"
+	exit 1
 fi
 
-echo -n "$GREEN"
-echo "[+] Attempting to run bot '$bot_to_run'..."
-echo -n "$NORMAL"
+log_file="$log_dir/${bot_to_run}.log"
 
-# Check that the bot is not already running
-if [[ $(ps aux | grep -v grep | grep $bot_to_run | grep python3) ]]; then
-        echo -n "$RED"
-        echo "[-] Bot is already running!!!"
-        echo -n "$NORMAL"
-        exit 1
+echo -e "$GREEN[+] Attempting to run bot '$bot_to_run'...$NORMAL" | tee -a "$log_file"
+
+# Check if the bot is already running
+if ps aux | grep "python3" | grep "$bot_to_run" | grep -v grep > /dev/null; then
+	echo -e "$RED[-] Bot '$bot_to_run' is already running!$NORMAL" | tee -a "$log_file"
+	exit 1
 fi
 
 # Get bot token to run bot
-bot_token=`sudo cat $discord_token_file | grep $bot_to_run`
-bot_token=${bot_token##$bot_to_run:}
+bot_token=$(grep "^$bot_to_run:" "$discord_token_file" | cut -d':' -f2)
 # If running the LOLBOT, fetch the Riot API key
-if [ "$bot_to_run" == "LOLBOT" ]; then
-	riot_token=`sudo cat $riot_token_file`
+if [ "$bot_to_run" == "lolbot" ]; then
+	riot_token=$(cat "$riot_token_file")
 	if [ -z "$riot_token" ]; then
-		echo -n "$RED"
-		echo "[-] No Riot API key found, check the Riot API key file."
-		echo -n "$NORMAL"
+		echo -e "$RED[-] No Riot API key found, check the Riot API key file.$NORMAL" | tee -a "$log_file"
 		exit 1
 	fi
-	echo -n "$GREEN"
-	echo "[+] Found Riot API key for '$bot_to_run'!"
-	sed -i "s/RIOT_API_KEY='XXXX'/RIOT_API_KEY='$riot_token'/g" $bot_apps/$bot_to_run/$bot_to_run.py
-	if [[ -z `cat $bot_apps/$bot_to_run/$bot_to_run.py | grep "RIOT_API_KEY='XXXX'"` ]]; then
-		echo -n "$GREEN"
-		echo "[+] Successfully placed Riot API key in '$bot_to_run.py'"
-		echo -n "$NORMAL"
+	echo -e "$GREEN[+] Found Riot API key for '$bot_to_run'!" | tee -a "$log_file"
+	sed -i "s/RIOT_API_KEY='XXXX'/RIOT_API_KEY='$riot_token'/g" "$bot_apps/$bot_to_run/$bot_to_run.py"
+	if ! grep -q "RIOT_API_KEY='XXXX'" "$bot_apps/$bot_to_run/$bot_to_run.py"; then
+		echo -e "$GREEN[+] Successfully placed Riot API key in '$bot_to_run.py'$NORMAL" | tee -a "$log_file"
 	else
-		echo -n "$RED"
-		echo "[-] Failed to replace Riot API key in '$bot_to_run.py'"
-		echo -n "$NORMAL"
+		echo -e "$RED[-] Failed to replace Riot API key in '$bot_to_run.py'$NORMAL" | tee -a "$log_file"
 		exit 1
 	fi
 fi
+
 # Check that there is a token
 if [ -z "$bot_token" ]; then
-        echo -n "$RED"
-        echo "[-] No token found for bot '$bot_to_run', make sure to check the token file."
-        echo -n "$NORMAL"
-        exit 1
+	echo -e "$RED[-] No token found for bot '$bot_to_run', make sure to check the token file.$NORMAL" | tee -a "$log_file"
+	exit 1
 fi
+
 # Move token into bot file so we can run the bot
-# NOTE: This assumes bot_to_run is same as the directory that the bot is stored in
-cd $bot_apps/$bot_to_run
-echo -n "$GREEN"
-echo "[+] Found token for '$bot_to_run'!"
-sed -i "s/TOKEN='XXXX'/TOKEN='$bot_token'/g" $bot_to_run.py
-# NOTE: If bots start to take different shapes then this line will need to be updated
-if [[ -z `cat $bot_apps/$bot_to_run/$bot_to_run.py | grep "TOKEN='XXXX'"` ]]; then
-        echo -n "$GREEN"
-        echo "[+] Successfully placed token in '$bot_to_run.py'"
-        echo -n "$NORMAL"
-else
-        echo -n "$RED"
-        echo "[-] Failed to replace token in '$bot_to_run.py'"
-        echo -n "$NORMAL"
-        exit 1
-fi
+cd "$bot_apps/$bot_to_run" || exit
+echo -e "$GREEN[+] Found token for '$bot_to_run'!" | tee -a "$log_file"
+sed -i "s/TOKEN='XXXX'/TOKEN='$bot_token'/g" "$bot_to_run.py"
+
 # Finally, run the bot
-echo -n "$CYAN"
-echo "#~~~~~~~~~~~~~~~~~~# BEGIN BOT #~~~~~~~~~~~~~~~~~~#"
-echo -n "$NORMAL"
-$python $bot_to_run.py
-sed -i "s/TOKEN='$bot_token'/TOKEN='XXXX'/g" $bot_to_run.py
+echo -e "$CYAN#~~~~~~~~~~~~~~~~~~# BEGIN BOT #~~~~~~~~~~~~~~~~~~#$NORMAL" | tee -a "$log_file"
+$python "$bot_to_run.py" >> "$log_file" 2>&1
+sed -i "s/TOKEN='$bot_token'/TOKEN='XXXX'/g" "$bot_to_run.py"
 if [ "$bot_to_run" == "LOLBOT" ]; then
-	sed -i "s/RIOT_API_KEY='$riot_token'/RIOT_API_KEY='XXXX'/g" $bot_to_run.py
+	sed -i "s/RIOT_API_KEY='$riot_token'/RIOT_API_KEY='XXXX'/g" "$bot_to_run.py"
 fi
-echo "$CYAN"
-echo "#~~~~~~~~~~~~~~~~~~#  END BOT  #~~~~~~~~~~~~~~~~~~#"
-echo "$GREEN"
-echo "[+] Successfully cleaned up token from '$bot_to_run.py'"
-echo "[+] All done, byebye!"
-echo -n "$NORMAL"
-cd -
+echo -e "$CYAN#~~~~~~~~~~~~~~~~~~#  END BOT  #~~~~~~~~~~~~~~~~~~#$NORMAL" | tee -a "$log_file"
+echo -e "$GREEN[+] Successfully cleaned up token from '$bot_to_run.py'$NORMAL" | tee -a "$log_file"
+echo -e "$GREEN[+] All done, byebye!$NORMAL" | tee -a "$log_file"
+cd - > /dev/null
 exit 0

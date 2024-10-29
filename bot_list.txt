@@ -1,5 +1,5 @@
 dndbot
 hackerbot
-MovieNightBot
-JadBot
-LOLBOT
+movienightbot
+jadbot
+lolbot
