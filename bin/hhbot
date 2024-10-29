@@ -107,7 +107,7 @@ sed -i "s/TOKEN='XXXX'/TOKEN='$bot_token'/g" "$bot_to_run.py"
 echo -e "$CYAN#~~~~~~~~~~~~~~~~~~# BEGIN BOT #~~~~~~~~~~~~~~~~~~#$NORMAL" | tee -a "$log_file"
 $python "$bot_to_run.py" >> "$log_file" 2>&1
 sed -i "s/TOKEN='$bot_token'/TOKEN='XXXX'/g" "$bot_to_run.py"
-if [ "$bot_to_run" == "LOLBOT" ]; then
+if [ "$bot_to_run" == "lolbot" ]; then
 	sed -i "s/RIOT_API_KEY='$riot_token'/RIOT_API_KEY='XXXX'/g" "$bot_to_run.py"
 fi
 echo -e "$CYAN#~~~~~~~~~~~~~~~~~~#  END BOT  #~~~~~~~~~~~~~~~~~~#$NORMAL" | tee -a "$log_file"

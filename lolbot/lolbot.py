@@ -24,7 +24,7 @@ LOL_DB.__enter__()
 BOT_PREFIX=("!lolbot ","/lolbot ","/lol")
 TOKEN='XXXX'
 PROXY_MODE=0
-RIOT_API_KEY='RGAPI-46d28306-e71d-4e63-8467-ac154d41804c'
+RIOT_API_KEY='XXXX'
 lol_watcher = LolWatcher(RIOT_API_KEY)
 riot_watcher = RiotWatcher(RIOT_API_KEY)
 REGION='na1'
